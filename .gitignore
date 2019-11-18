@@ -2,3 +2,6 @@
 .vscode/
 *.pyc
 venv/
+Audio/
+bvenv/
+Dataset/

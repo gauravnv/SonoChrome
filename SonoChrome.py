@@ -1,1 +1,1 @@
-# We will run this file to run the program
+# We'll use this file to run an interactive script
