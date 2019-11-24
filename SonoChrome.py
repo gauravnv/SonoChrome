@@ -4,18 +4,35 @@ import tkinter as tk
 import librosa
 import numpy as np
 import pandas as pd
+import Chrome, Sono
 
 from tkinter import filedialog
+from pydub import AudioSegment
+from pydub.utils import make_chunks
 from os import listdir
 from os.path import isfile, join
 
 
-# The below can be used to select a single file
-# root = tk.Tk()
-# root.withdraw()
-#
-# # 1. Get the file path to the included audio example
-# filename = filedialog.askopenfilename()
+def song_predictor():
+    # The below can be used to select a single file
+    root = tk.Tk()
+    root.withdraw()
+
+    # 1. Get the file path to the included audio example
+    filename = filedialog.askopenfilename()
+    # Load the audio file
+    audio_file = AudioSegment.from_wav(filename)
+    # Define the chunk time (5s)
+    chunk_length_ms = 5000  # pydub calculates in millisec
+    audio_chunks = make_chunks(audio_file, chunk_length_ms)  # Make chunks of 5 sec
+
+    # Export all of the individual chunks as wav files
+    # Dropping the last chunk because it might not be the appropriate chunk size
+    for i in range(len(audio_chunks)-1):
+        chunk_name = "Output/chunk{0}.wav".format(i)
+        print("exporting", chunk_name)
+        audio_chunks[i].export(chunk_name, format="wav")
+
 
 # Extract features from every song in the path by storing them
 # into feature vectors
@@ -32,7 +49,6 @@ def get_features(path):
     feature_set = pd.DataFrame()  # Feature Matrix
 
     # Individual Feature Vectors
-    s_id_vector = pd.Series()
     songname_vector = pd.Series()
     tempo_vector = pd.Series()
     total_beats = pd.Series()
@@ -127,7 +143,6 @@ def get_features(path):
         frames_to_time = librosa.frames_to_time(onset_frames[:20], sr=sr)
 
         # Transforming Features
-        s_id_vector.at[s_id] = s_id # song ID
         songname_vector.at[s_id] = line  # song name
         tempo_vector.at[s_id] = tempo  # tempo
         total_beats.at[s_id] = sum(beats)  # beats
@@ -156,7 +171,7 @@ def get_features(path):
         cent_mean.at[s_id] = np.mean(cent)  # cent
         cent_std.at[s_id] = np.std(cent)
         cent_var.at[s_id] = np.var(cent)
-        spec_bw_mean.at[s_id] = np.mean(spec_bw) # spectral bandwidth
+        spec_bw_mean.at[s_id] = np.mean(spec_bw)  # spectral bandwidth
         spec_bw_std.at[s_id] = np.std(spec_bw)
         spec_bw_var.at[s_id] = np.var(spec_bw)
         contrast_mean.at[s_id] = np.mean(contrast)  # contrast
@@ -184,11 +199,10 @@ def get_features(path):
         frame_std.at[s_id] = np.std(frames_to_time)
         frame_var.at[s_id] = np.var(frames_to_time)
 
-        print(s_id, ". ", file_name)
+        print(s_id, ".", file_name)
         s_id = s_id + 1
 
     # Concatenating Features into one csv and json format
-    feature_set["s_id"] = s_id_vector  # song id
     feature_set['song_name'] = songname_vector  # song name
     feature_set['tempo'] = tempo_vector  # tempo
     feature_set['total_beats'] = total_beats  # beats
@@ -246,9 +260,28 @@ def get_features(path):
     feature_set['frame_var'] = frame_var
 
     # Converting Dataframe into CSV Excel and JSON file
-    feature_set.to_csv('Dataset/Emotion_features.csv')
-    # feature_set.to_json('Emotion_features.json')
+    feature_set.to_csv('Dataset/Audio_features.csv')
 
 
-# Extracting Feature Function Call
-get_features('Audio/')
+def main():
+    print("Welcome to SonoChrome. Please choose one of the options below:")
+    print("1. Produce Image")
+    print("2. Build Training Set")
+    print("3. Train the model and test accuracy")
+    print("4. Predict the emotions in a song")
+    user_input = input("Please choose a number: ")
+    if user_input == '1':
+        Chrome.build_image()
+    elif user_input == '2':
+        # Extracting Feature Function Call
+        get_features('Audio/')
+    elif user_input == '3':
+        Sono.train_model()
+    elif user_input == '4':
+        song_predictor()
+        get_features('Output/')
+        Sono.predict_emotion()
+
+
+if __name__ == "__main__":
+    main()
