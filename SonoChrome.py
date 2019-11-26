@@ -4,13 +4,15 @@ import tkinter as tk
 import librosa
 import numpy as np
 import pandas as pd
-import Chrome, Sono
+import Chrome, SonoKNN
 
 from tkinter import filedialog
 from pydub import AudioSegment
 from pydub.utils import make_chunks
 from os import listdir
 from os.path import isfile, join
+
+import Sono
 
 
 def song_predictor():
@@ -262,25 +264,34 @@ def get_features(path):
     # Converting Dataframe into CSV Excel and JSON file
     feature_set.to_csv('Dataset/Audio_features.csv')
 
+def show_options():
+    print("Welcome to SonoChrome. Please choose one of the options below:")
+    print("1. Build Training Set")
+    print("2. Train the model and test accuracy")
+    print("3. Predict the emotions in a song")
+    print("4. Press 'x' to quit")
+    user_input = input("Please choose a number: ")
+    return user_input
+
 
 def main():
-    print("Welcome to SonoChrome. Please choose one of the options below:")
-    print("1. Produce Image")
-    print("2. Build Training Set")
-    print("3. Train the model and test accuracy")
-    print("4. Predict the emotions in a song")
-    user_input = input("Please choose a number: ")
-    if user_input == '1':
-        Chrome.build_image()
-    elif user_input == '2':
-        # Extracting Feature Function Call
-        get_features('Audio/')
-    elif user_input == '3':
-        Sono.train_model()
-    elif user_input == '4':
-        song_predictor()
-        get_features('Output/')
-        Sono.predict_emotion()
+    user_input = show_options()
+    emotions = []
+    while user_input != 'x':
+        if user_input == '1':
+            # Extracting Feature Function Call
+            get_features('Audio/')
+            user_input = show_options()
+        elif user_input == '2':
+            Sono.build_model()
+            user_input = show_options()
+        elif user_input == '3':
+            song_predictor()
+            get_features('Output/')
+            emotions = Sono.predict_emotion()
+            num_images = input("Enter number of images you would like as a representation: ")
+            Chrome.build_image(emotions, int(num_images))
+            user_input = show_options()
 
 
 if __name__ == "__main__":
