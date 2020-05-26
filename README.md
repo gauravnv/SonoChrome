@@ -6,3 +6,4 @@ This is a program that converts music into abstract images that represent the su
 
 
 
+![Poster](README.assets/Poster.png)
